@@ -6,20 +6,21 @@ An Archipelago integration for *The Legend of Spyro: Dawn of the Dragon* (PS2, N
 
 ## Item Pool & Locations
 ### Items
-* **Blue Gem Cluster**: +1000 EXP to both Spyro and Cynder (99)
-* **Health Gem**: +1 Red Health Crystal to both Spyro and Cynder (20)
-* **Mana Gem**: +1 Green Magic Crystal to both Spyro and Cynder (20)
-* **[Spyro | Cynder] [Helmet | Bracers | Tail] [Silver | Gold | Fury]**: Grants the specified piece of armor (18)
+* **Blue Gem Cluster**: +1000 EXP to both Spyro and Cynder (99, Useful)
+* **Health Gem**: +1 Red Health Crystal to both Spyro and Cynder (20, Useful)
+* **Mana Gem**: +1 Green Magic Crystal to both Spyro and Cynder (20, Useful)
+* **[Spyro | Cynder] [Helmet | Bracers | Tail] [Silver | Gold | Fury]**: Grants the specified piece of armor (18, Useful)
 * **Health Gem S**: Any player-controlled dragon(s) recover 19 HP (Filler)
 * **Mana Gem S**: Any player-controlled dragon(s) recover 19 Mana (Filler)
+* **Progressive Chapter Unlock**: Grants access to the next chapter in the list, be it vanilla or shuffled (10, Progression)
 ### Locations
 * **All 99 Blue Gem Clusters**
 * **All 20 Health Gems**
 * **All 20 Mana Gems**
 * **All 18 Armor Chests**
 * **All 8 Elite Enemies**
+* **All 10 Chapter Clears (excluding Malefor's Lair)**
 
-As all items in this game are effectively optional, progression is not gated.
 ### Goal Check
 Defeat Malefor!
 
@@ -63,15 +64,20 @@ Download the latest release from GitHub and pick _one_ of the following methods 
 
 ## Known Issues
 
-* **Blue Gem EXP duplication on reconnect**
+* **Blue Gem EXP duplication on reconnect**: 
   Reconnecting to the server may reapply EXP from Blue Gems.
   This can result in higher-than-intended EXP totals but does not break progression.
+* **Loading certain levels via story mode will cause loads into unplayable states**: This has to do with how the game handles loading pre-rendered cutscenes before certain levels, as well as the client attempting to prevent access to levels that have yet to be unlocked via the Progressive Chapter Unlock items by forcing loads into levels that do not align with vanilla ordering. 
+  Forcing loads into levels such as Catacombs, Dragon City, and The Dam may load unplayable states of the game.
+  ### [!!!] IMPORTANT: FOR THE ABOVE REASON, IT IS NOT ONLY HIGHLY RECOMMENDED BUT EXPECTED THAT YOU PLAY DAWN OF THE DRAGON IN CHAPTER MODE OVER THE COURSE OF YOUR RANDOMIZER EXPERIENCE [!!!]
+* **The Death Link option does not work**: This is a high-priority issue that will be worked on for the next update.
 
 * Additional bugs may exist, as this is a very early release
 
 ---
 
 ## Troubleshooting
+### Before attempting to troubleshoot, please look for your issue in the "Known Issues" section of this document
 
 ### Client does not connect to PCSX2
 
@@ -89,14 +95,12 @@ Download the latest release from GitHub and pick _one_ of the following methods 
   * Archipelago server
   * PCSX2
 
-### My max health/max mana is not increasing, even when I have 4+ Health/Mana Gems!
-* If everything is working correctly, you will not see the update to your HP/mana bars until you recover your HP/mana.
-
 ### The game says I have enough (4-5) Red Health Crystals/Green Magic Crystals when I've received zero so far!
 * This is simply a quirk of the UI. It perceives zero as having a full bar of these crystals.
 
 ### I got 1000 EXP from a blue gem cluster! Shouldn't that have been cancelled out?
 * If everything is working correctly, this only happens when one or both dragons have less than 1000 unspent EXP. In this case, after one second has passed, the value should correct itself. To see if the value was updated properly, swap dragons to update their HUD.
+* If this did not fix the EXP value, then it is likely through failing to save in-game that blue gem clusters already marked as checked by the Archipelago server have respawned. Please make sure you consistently save your progress to prevent such desyncs from happening.
 
 ---
 
@@ -104,6 +108,7 @@ Download the latest release from GitHub and pick _one_ of the following methods 
 
 * Primary Contributor: IcyPenguin_
 * Consulting and Debugging: Uroogla
+* Special thanks to EVZone on RetroAchievements for finding most relevant memory addresses
 
 ---
 
