@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Optional
 
 # Imports of base Archipelago modules must be absolute
 from worlds.AutoWorld import World
@@ -35,6 +35,34 @@ class DotDWorld(World):
 
     # For chapter order shuffling
     chapter_order: list[str]
+
+
+    # UniversalTracker Support
+    ut_can_gen_without_yaml = True
+
+    @staticmethod
+    def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
+        return slot_data
+    
+    def generate_early(self):
+        self.handle_ut_yamless(None)
+    
+    def handle_ut_yamless(self, slot_data: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
+        if not slot_data \
+                and hasattr(self.multiworld, "re_gen_passthrough") \
+                and isinstance(self.multiworld.re_gen_passthrough, dict) \
+                and self.game in self.multiworld.re_gen_passthrough:
+            slot_data = self.multiworld.re_gen_passthrough[self.game]
+
+        if not slot_data:
+            return None
+
+        self.options.death_link.value = slot_data["death_link"]
+        self.options.learn_fury.value = slot_data["learn_fury"]
+        self.options.shuffle_chapter_order.value = slot_data["shuffle_chapter_order"]
+        self.chapter_order = [str(x) for x in slot_data["chapter_order"]]
+
+        return slot_data
 
     # Our world class must have certain functions ("steps") that get called during generation.
     # The main ones are: create_regions, set_rules, and create_items.
@@ -75,9 +103,15 @@ class DotDWorld(World):
             # "learn_to_climb",
             # "learn_to_wallrun",
             # "learn_to_breathe"
-            "shuffle_chapter_order"
+            "shuffle_chapter_order",
+            "learn_fury"
         )
 
         slot_data["chapter_order"] = self.chapter_order
 
         return slot_data
+    
+    def write_spoiler_header(self, spoiler_handle):
+        spoiler_handle.write(f"\nChapter Order ({self.multiworld.get_player_name(self.player)}):\n")
+        for i, chapter in enumerate(self.chapter_order):
+            spoiler_handle.write(f"  Chapter {i + 1}: {chapter}\n")

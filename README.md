@@ -24,6 +24,11 @@ An Archipelago integration for *The Legend of Spyro: Dawn of the Dragon* (PS2, N
 ### Goal Check
 Defeat Malefor!
 
+## Options
+* **Death Link**: If another player in the multiworld dies, Spyro and Cynder instantly die.
+* **Shuffle Chapter Order**: Chapters are unlocked in a random order with the exception of Malefor's Lair which is always unlocked last.
+* **Learn Fury**: One or both dragons cannot build the fury bar until it is enabled via an item. Use of fury breath via the Fury Armor's Set Bonus remains unaffected. Fury is required to pass phase 3 of the Malefor final boss fight.
+
 ---
 
 ## Requirements
@@ -67,10 +72,8 @@ Download the latest release from GitHub and pick _one_ of the following methods 
 * **Blue Gem EXP duplication on reconnect**: 
   Reconnecting to the server may reapply EXP from Blue Gems.
   This can result in higher-than-intended EXP totals but does not break progression.
-* **Loading certain levels via story mode will cause loads into unplayable states**: This has to do with how the game handles loading pre-rendered cutscenes before certain levels, as well as the client attempting to prevent access to levels that have yet to be unlocked via the Progressive Chapter Unlock items by forcing loads into levels that do not align with vanilla ordering. 
-  Forcing loads into levels such as Catacombs, Dragon City, and The Dam may load unplayable states of the game.
-  ### [!!!] IMPORTANT: FOR THE ABOVE REASON, IT IS NOT ONLY HIGHLY RECOMMENDED BUT EXPECTED THAT YOU PLAY DAWN OF THE DRAGON IN CHAPTER MODE OVER THE COURSE OF YOUR RANDOMIZER EXPERIENCE [!!!]
-* **The Death Link option does not work**: This is a high-priority issue that will be worked on for the next update.
+* **Health Gem S/Mana Gem S items can briefly allow a dragon's current HP/Mana to exceed their max HP/Mana**
+  This is a byproduct of how the game internally handles max HP/Mana. A fix is possible but is not a high priority at the moment because the weakest enemies deal 20 damage and these filler items recover 15.
 
 * Additional bugs may exist, as this is a very early release
 
@@ -99,7 +102,7 @@ Download the latest release from GitHub and pick _one_ of the following methods 
 * This is simply a quirk of the UI. It perceives zero as having a full bar of these crystals.
 
 ### I got 1000 EXP from a blue gem cluster! Shouldn't that have been cancelled out?
-* If everything is working correctly, this only happens when one or both dragons have less than 1000 unspent EXP. In this case, after one second has passed, the value should correct itself. To see if the value was updated properly, swap dragons to update their HUD.
+* As of the latest update, blue gem clusters now internally give 0 EXP when collected.
 * If this did not fix the EXP value, then it is likely through failing to save in-game that blue gem clusters already marked as checked by the Archipelago server have respawned. Please make sure you consistently save your progress to prevent such desyncs from happening.
 
 ---
@@ -107,7 +110,7 @@ Download the latest release from GitHub and pick _one_ of the following methods 
 ## Credits
 
 * Primary Contributor: IcyPenguin_
-* Consulting and Debugging: Uroogla
+* Consulting and Debugging: Uroogla, Dragonsoul5000
 * Special thanks to EVZone on RetroAchievements for finding most relevant memory addresses
 
 ---
