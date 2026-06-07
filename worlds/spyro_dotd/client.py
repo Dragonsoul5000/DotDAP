@@ -29,6 +29,8 @@ ADDR_SPYRO_CURRENT_HP = 0x9FEAE0
 ADDR_CYNDER_CURRENT_HP = 0x9FEAE8
 ADDR_SPYRO_CURRENT_MANA = 0x9FEAF8
 ADDR_CYNDER_CURRENT_MANA = 0x9FEB00
+ADDR_SPYRO_CURRENT_FURY = 0x9FEB08
+ADDR_CYNDER_CURRENT_FURY = 0x9FEB0C
 ADDR_SPYRO_CONTROLLER = 0x98C195
 ADDR_CYNDER_CONTROLLER = 0x98C196
 ADDR_HEALTH_GEMS_COLLECTED = 0x9FEB6C
@@ -264,6 +266,7 @@ class DotDContext(CommonContext):
 
         # Item state variables
         self._session_blue_gems_at_connect: int = 0
+        self._learned_fury: list[bool] = [True, True] # index 0 = Spyro, 1 = Cynder
 
         # Armor names received — set-based, naturally idempotent
         self._received_armor: Set[str] = set()
@@ -271,6 +274,7 @@ class DotDContext(CommonContext):
         # Default options values
         self.last_death_link: float = 0
         self.death_link_enabled = False
+        self.learn_fury = 0
 
         # Whether game-version check has passed
         self._game_version_ok: bool = False
@@ -318,12 +322,32 @@ class DotDContext(CommonContext):
             # On (re)connection: reset cumulative counters and re-apply
             # ALL items from scratch so we always match the server's state.
             # -------------------------------------------------------
+            # Handle item state update
             self._reset_item_state()
             self.apply_patches()
+
+            # Handle death link
             self.death_link_enabled = bool(args["slot_data"].get("death_link", 0))
+            print(f"Death Link is {self.death_link_enabled}")
+
+            if self.death_link_enabled:
+                asyncio.create_task(self.update_death_link(True))
+
+            # Make note of chapter shuffle order for local use
             order = args["slot_data"].get("chapter_order")
             if order:
                 self.chapter_order = order + ["Malefor's Lair"]
+            
+            # Always have the first chapter unlocked
+            self.memory.write_bytes(LEVEL_NAME_TO_SCRATCH_ADDRESS[self.chapter_order[0]], b"\x01")
+            
+            # Handle Learn Fury (current_key is useless. slot_data I believe stores ints instead. Which int means which option is found in options.py)
+            self.learn_fury = args["slot_data"].get("learn_fury", 0)
+
+            # Learn Fury
+            # If learn_fury is disabled, fury is always unlocked
+            if self.learn_fury == 0:
+                self._learned_fury = [True, True]
 
         elif cmd == "ReceivedItems":
             try:
@@ -365,6 +389,7 @@ class DotDContext(CommonContext):
         self._total_mana_gems = 0
         self._received_armor = set()
         self._num_chapters_unlocked = 0
+        self._learned_fury = [False, False] # accumulate needs to restore the flags from false
 
     def _accumulate_item(self, item_name: str):
         """
@@ -386,6 +411,14 @@ class DotDContext(CommonContext):
             self._received_armor.add(item_name)
         elif "Chapter" in item_name:
             self._num_chapters_unlocked += 1
+        elif "Fury" in item_name:
+            if "Spyro" in item_name:
+                self._learned_fury[0] = True
+            elif "Cynder" in item_name:
+                self._learned_fury[1] = True
+            elif "Dragon's" in item_name:
+                self._learned_fury[0] = True
+                self._learned_fury[1] = True
         # Instant consumables (Health Gem S / Mana Gem S) are handled inside
         # handle_receive_item because they are meant to be applied once per
         # receipt, not re-applied on reconnect.
@@ -419,12 +452,17 @@ class DotDContext(CommonContext):
             if scratch_addr:
                 self.memory.write_bytes(scratch_addr, b"\x01")
         
-        # TODO: Chapters(?)
+        # Chapters: set scratch flags for all unlocked chapters
         for i in range(self._num_chapters_unlocked + 1):
             chapter_name = self.chapter_order[i]
             scratch_addr = LEVEL_NAME_TO_SCRATCH_ADDRESS.get(chapter_name)
             if scratch_addr:
                 self.memory.write_bytes(scratch_addr, b"\x01")
+        
+        # Learn Fury
+        # If learn_fury is disabled, fury is always unlocked
+        if self.learn_fury == 0:
+            self._learned_fury = [True, True]
 
     # ------------------------------------------------------------------
     # Patches
@@ -442,12 +480,22 @@ class DotDContext(CommonContext):
         ]))
 
         # CHAPTER UNLOCK BYTE SPLIT
-        self.memory.write_bytes(0x005E7CB0, bytes([
-            0x54, 0x02, 0x63, 0x90
-        ]))
         self.memory.write_bytes(0x003BDCC4, bytes([
             0x54, 0x02, 0x45, 0x90
         ]))
+
+        # CHAPTER MENU PERMANENT UNLOCK PATCH
+        self.memory.write_bytes(0x005E7CB0, bytes([
+            0x01, 0x00, 0x03, 0x34
+        ]))
+
+        # STORY MODE PERMANENT LOCK PATCH
+        self.memory.write_bytes(0x005E7C78, bytes([
+            0x01, 0x00, 0x05, 0x34
+        ]))
+
+        # BLUE GEMS GIVE 0 EXP PATCH
+        self.memory.write_u32(0x009FEB14, 0)
 
         print("Game patches applied.")
 
@@ -471,43 +519,10 @@ class DotDContext(CommonContext):
     # Death / kill
     # ------------------------------------------------------------------
     async def kill_player(self):
-        self.memory.write_u32(ADDR_SPYRO_CURRENT_HP, 0)
-        self.memory.write_u32(ADDR_CYNDER_CURRENT_HP, 0)
-
-    # ------------------------------------------------------------------
-    # Item send (location-side cancellation)
-    # ------------------------------------------------------------------
-    def handle_send_item(self, loc_name: str):
-        id = LOCATION_NAME_TO_ID[loc_name]
-        if 1 <= id <= 99:
-            asyncio.create_task(self.handle_cancel_blue_gem())
-        elif 101 <= id <= 120:
-            self.handle_cancel_health_gem()
-        elif 201 <= id <= 220:
-            self.handle_cancel_mana_gem()
-        elif 401 <= id <= 418:
-            self.handle_cancel_armor()
-
-    async def handle_cancel_blue_gem(self):
-        spyro_unspent_exp = self.memory.read_u32(ADDR_SPYRO_UNSPENT_EXP) or 0
-        cynder_unspent_exp = self.memory.read_u32(ADDR_CYNDER_UNSPENT_EXP) or 0
-        if spyro_unspent_exp < 1000 or cynder_unspent_exp < 1000:
-            await asyncio.sleep(1.0)
-            spyro_unspent_exp = self.memory.read_u32(ADDR_SPYRO_UNSPENT_EXP) or 0
-            cynder_unspent_exp = self.memory.read_u32(ADDR_CYNDER_UNSPENT_EXP) or 0
-        else:
-            await asyncio.sleep(0)
-        self.memory.write_u32(ADDR_SPYRO_UNSPENT_EXP, max(0, spyro_unspent_exp - 1000))
-        self.memory.write_u32(ADDR_CYNDER_UNSPENT_EXP, max(0, cynder_unspent_exp - 1000))
-
-    def handle_cancel_health_gem(self):
-        pass  # handled by health_gem_setter
-
-    def handle_cancel_mana_gem(self):
-        pass  # handled by mana_gem_setter
-
-    def handle_cancel_armor(self):
-        pass  # handled by armor_setter
+        if self.memory.read_bytes(ADDR_SPYRO_CONTROLLER, 1) == b"\x00":
+            self.memory.write_u32(ADDR_SPYRO_CURRENT_HP, 0)
+        elif self.memory.read_bytes(ADDR_CYNDER_CONTROLLER, 1) == b"\x00":
+            self.memory.write_u32(ADDR_CYNDER_CURRENT_HP, 0)
 
     # ------------------------------------------------------------------
     # Legacy per-item receive handlers (still used for instant consumables)
@@ -515,18 +530,18 @@ class DotDContext(CommonContext):
     def handle_receive_health_gem_s(self):
         if self.memory.read_bytes(ADDR_SPYRO_CONTROLLER, 1) == b"\x00":
             spyro_hp = self.memory.read_u32(ADDR_SPYRO_CURRENT_HP) or 0
-            self.memory.write_u32(ADDR_SPYRO_CURRENT_HP, spyro_hp + 19)
+            self.memory.write_u32(ADDR_SPYRO_CURRENT_HP, spyro_hp + 15)
         if self.memory.read_bytes(ADDR_CYNDER_CONTROLLER, 1) == b"\x00":
             cynder_hp = self.memory.read_u32(ADDR_CYNDER_CURRENT_HP) or 0
-            self.memory.write_u32(ADDR_CYNDER_CURRENT_HP, cynder_hp + 19)
+            self.memory.write_u32(ADDR_CYNDER_CURRENT_HP, cynder_hp + 15)
 
     def handle_receive_mana_gem_s(self):
         if self.memory.read_bytes(ADDR_SPYRO_CONTROLLER, 1) == b"\x00":
             spyro_mana = self.memory.read_u32(ADDR_SPYRO_CURRENT_MANA) or 0
-            self.memory.write_u32(ADDR_SPYRO_CURRENT_MANA, spyro_mana + 19)
+            self.memory.write_u32(ADDR_SPYRO_CURRENT_MANA, spyro_mana + 15)
         if self.memory.read_bytes(ADDR_CYNDER_CONTROLLER, 1) == b"\x00":
             cynder_mana = self.memory.read_u32(ADDR_CYNDER_CURRENT_MANA) or 0
-            self.memory.write_u32(ADDR_CYNDER_CURRENT_MANA, cynder_mana + 19)
+            self.memory.write_u32(ADDR_CYNDER_CURRENT_MANA, cynder_mana + 15)
 
     # ------------------------------------------------------------------
     # Goal completion
@@ -604,7 +619,6 @@ async def location_watcher(ctx: DotDContext):
                         print(f"Check found: {location_name}")
                         ctx.checked_locations.add(location_id)
                         await ctx.check_locations([location_id])
-                        ctx.handle_send_item(location_name)
 
             await asyncio.sleep(0.1)
         except Exception as e:
@@ -632,6 +646,19 @@ async def mana_gem_setter(ctx: DotDContext):
         await asyncio.sleep(0.1)
 
 
+async def fury_points_setter(ctx: DotDContext):
+    while True:
+        try:
+            if ctx.memory.is_connected and ctx._game_version_ok:
+                if not ctx._learned_fury[0]:
+                    ctx.memory.write_u32(ADDR_SPYRO_CURRENT_FURY, 0)
+                if not ctx._learned_fury[1]:
+                    ctx.memory.write_u32(ADDR_CYNDER_CURRENT_FURY, 0)
+        except Exception as e:
+            print(f"Error in fury_points_setter: {e}")
+        await asyncio.sleep(0.1)
+
+
 async def death_watcher(ctx: DotDContext):
     while True:
         try:
@@ -644,39 +671,14 @@ async def death_watcher(ctx: DotDContext):
                     await asyncio.sleep(0.1)
                     continue
 
-                if spyro_hp == 0 and cynder_hp == 0:
+                if spyro_hp == 0 or cynder_hp == 0:
                     current_time = time.time()
-                    if current_time - ctx.last_death_link > 3.0:
+                    if current_time - ctx.last_death_link > 12.0:
                         await ctx.send_death(death_text="Spyro and Cynder have fallen!")
                         ctx.last_death_link = current_time
         except Exception as e:
             print(f"Error in death_watcher: {e}")
         await asyncio.sleep(0.1)
-
-async def level_redirector(ctx: DotDContext):
-    while True:
-        try:
-            if ctx.memory.is_connected and ctx._game_version_ok:
-                next_level = ctx.memory.read_bytes(ADDR_NEXT_LEVEL, 1)
-                if next_level and next_level not in (b"\x00", b"\xFF"):
-                    # Find which chapter name this level ID corresponds to
-                    next_level_name = next((name for name, id_bytes in LEVEL_NAME_TO_ID.items()
-                                           if id_bytes == next_level), None)
-                    if next_level_name is None:
-                        await asyncio.sleep(0.05)
-                        continue
-
-                    # Check if this chapter is unlocked by seeing if it appears
-                    # within the unlocked slice of chapter_order
-                    unlocked_chapters = ctx.chapter_order[:ctx._num_chapters_unlocked + 1]
-                    if next_level_name not in unlocked_chapters:
-                        chosen_name = random.choice(unlocked_chapters)
-                        fallback_id = LEVEL_NAME_TO_ID.get(chosen_name)
-                        if fallback_id:
-                            ctx.memory.write_bytes(ADDR_NEXT_LEVEL, fallback_id)
-        except Exception as e:
-            print(f"Error in level_redirector: {e}")
-        await asyncio.sleep(0.05)
 
 
 async def goal_watcher(ctx: DotDContext):
@@ -693,17 +695,6 @@ async def goal_watcher(ctx: DotDContext):
         except Exception as e:
             print(f"Error in goal_watcher: {e}")
         await asyncio.sleep(0.5)
-
-
-async def chapter_menu_unlocker(ctx: DotDContext):
-    while True:
-        try:
-            if ctx.memory.is_connected and ctx._game_version_ok:
-                ctx.memory.write_bytes(0x9FECE4, b"\x01")
-        except Exception as e:
-            print(f"Error in chapter_menu_unlocker: {e}")
-        await asyncio.sleep(0.1)
-
 
 
 # ---------------------------------------------------------------------------
@@ -727,11 +718,10 @@ def main(*args: str):
         watcher_task = asyncio.create_task(location_watcher(ctx), name="location watcher")
         health_gem_task = asyncio.create_task(health_gem_setter(ctx), name="health gem task")
         mana_gem_task = asyncio.create_task(mana_gem_setter(ctx), name="mana gem task")
+        fury_task = asyncio.create_task(fury_points_setter(ctx), name="fury task")
         death_task = asyncio.create_task(death_watcher(ctx), name="death watcher")
         goal_task = asyncio.create_task(goal_watcher(ctx), name="goal watcher")
         watchdog_task = asyncio.create_task(emulator_watchdog(ctx), name="emulator watchdog")
-        redirector_task = asyncio.create_task(level_redirector(ctx), name="redirector task")
-        chapter_menu_task = asyncio.create_task(chapter_menu_unlocker(ctx), name="chapter menu unlocker")
 
         if gui_enabled:
             ctx.run_gui()
@@ -740,7 +730,7 @@ def main(*args: str):
         await ctx.exit_event.wait()
 
         # Cancel all background tasks
-        for task in (watcher_task, health_gem_task, mana_gem_task, death_task, goal_task, watchdog_task, chapter_menu_task, redirector_task):
+        for task in (watcher_task, health_gem_task, mana_gem_task, fury_task, death_task, goal_task, watchdog_task):
             task.cancel()
             try:
                 await task
