@@ -20,8 +20,6 @@ if TYPE_CHECKING:
 #                   201-220: Mana Gems
 #                   301-308: Elite Enemies
 #                   401-420: Armor Chests
-#                   501-510: Level Clears
-#                   601-604: Gallery Unlocks
 LOCATION_NAME_TO_ID = {
     "Catacombs Blue Gem 1/10": 1,
     "Catacombs Blue Gem 2/10": 2,
@@ -197,19 +195,11 @@ LOCATION_NAME_TO_ID = {
     "The Dam Cleared": 507,
     "The Destroyer Cleared": 508,
     "Burned Lands Cleared": 509,
-    "Floating Islands Cleared": 510,
-    # "Spyro Gallery Unlock": 601,
-    # "Cynder Gallery Unlock": 602,
-    "Alliance Gallery Unlock": 603,
-    "Scenery Gallery Unlock": 604
+    "Floating Islands Cleared": 510
 }
 
 # If the flag at one of these addresses == 1, then the item at the location has been collected
 LOCATION_FLAG_ADDRESS_TO_NAME = {
-    # 0x9fecdf: "Spyro Gallery Unlock",
-    # 0x9fece0: "Cynder Gallery Unlock",
-    0x9fece1: "Alliance Gallery Unlock",
-    0x9fece3: "Scenery Gallery Unlock",
     0xa3edc4: "Catacombs Blue Gem 1/10",
     0xa3ee0c: "Catacombs Blue Gem 2/10",
     0xa3ee30: "Catacombs Blue Gem 3/10",
@@ -408,7 +398,6 @@ def create_all_locations(world: DotDWorld) -> None:
 def create_regular_locations(world: DotDWorld) -> None:
     # Finally, we need to put the Locations ("checks") into their regions.
     # Once again, before we do anything, we can grab our regions we created by using world.get_region()
-    gallery = world.get_region("Gallery")
     catacombs = world.get_region("Catacombs")
     twilight_falls = world.get_region("Twilight Falls")
     valley_of_avalar = world.get_region("Valley of Avalar")
@@ -425,15 +414,6 @@ def create_regular_locations(world: DotDWorld) -> None:
     # For this, you need to have a dict of location names to their IDs (i.e. a subset of location_name_to_id)
     # Aha! So that's why we made that "get_location_names_with_ids" helper method earlier.
     # You also ened to pass your overridden Location class.
-    gallery_locations = get_location_names_with_ids(
-        [
-            # "Spyro Gallery Unlock",
-            # "Cynder Gallery Unlock",
-            "Alliance Gallery Unlock",
-            "Scenery Gallery Unlock"
-        ]
-    )
-
     catacombs_locations = get_location_names_with_ids(
         [
             "Catacombs Blue Gem 1/10",
@@ -659,7 +639,6 @@ def create_regular_locations(world: DotDWorld) -> None:
         ]
     )
 
-    gallery.add_locations(gallery_locations, DotDLocation)
     catacombs.add_locations(catacombs_locations, DotDLocation)
     twilight_falls.add_locations(twilight_falls_locations, DotDLocation)
     valley_of_avalar.add_locations(valley_of_avalar_locations, DotDLocation)
@@ -673,29 +652,10 @@ def create_regular_locations(world: DotDWorld) -> None:
 
 
 def create_events(world: DotDWorld) -> None:
-    from worlds.generic.Rules import set_rule
     malefors_lair = world.get_region("Malefor's Lair")
     
     victory_location = DotDLocation(world.player, "Defeat Malefor", None, malefors_lair)
     victory_location.place_locked_item(
         DotDItem("Victory", ItemClassification.progression, None, world.player)
     )
-
-    player = world.player
-    fury_option = world.options.learn_fury.current_key
-
-    if fury_option == "both_together":
-        set_rule(victory_location,
-            lambda state: state.has("Dragon's Fury", player))
-    elif fury_option == "both_separate":
-        # Either dragon alone can build an entire fury bar, so either fury item is sufficient
-        set_rule(victory_location,
-            lambda state: state.has("Spyro's Fury", player) and state.has("Cynder's Fury", player))
-    elif fury_option == "spyro":
-        set_rule(victory_location,
-            lambda state: state.has("Spyro's Fury", player))
-    elif fury_option == "cynder":
-        set_rule(victory_location,
-            lambda state: state.has("Cynder's Fury", player))
-    # else: no rule required. Both dragons can automatically build fury
     malefors_lair.locations.append(victory_location)

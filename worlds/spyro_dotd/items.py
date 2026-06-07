@@ -42,10 +42,7 @@ ITEM_NAME_TO_ID = {
     "Cynder's Elements": 28,
     "Wall Climbing": 29,
     "Wall Running": 30,
-    "Progressive Chapter Unlock": 31,
-    "Dragon's Fury": 32,
-    "Spyro's Fury": 33,
-    "Cynder's Fury": 34
+    "Progressive Chapter Unlock": 31
 }
 
 # Items should havea defined default classification.
@@ -79,10 +76,7 @@ DEFAULT_ITEM_CLASSIFICATIONS = {
     "Dragons' Elements": ItemClassification.progression,
     "Spyro's Elements": ItemClassification.progression,
     "Cynder's Elements": ItemClassification.progression,
-    "Progressive Chapter Unlock": ItemClassification.progression,
-    "Dragon's Fury": ItemClassification.progression,
-    "Spyro's Fury": ItemClassification.progression,
-    "Cynder's Fury": ItemClassification.progression
+    "Progressive Chapter Unlock": ItemClassification.progression
 }
 
 # Each Item instance must correctly report to the "game" it belongs to.
@@ -149,34 +143,38 @@ def create_all_items(world: DotDWorld) -> None:
     itempool.append(world.create_item("Cynder Bracers Fury"))
 
     # Add level keys
+    # itempool.append(world.create_item("Twilight Falls Key"))
+    # itempool.append(world.create_item("Valley of Avalar Key"))
+    # itempool.append(world.create_item("Dragon City Key"))
+    # itempool.append(world.create_item("Attack of the Golem Key"))
+    # itempool.append(world.create_item("Ruins of Warfang Key"))
+    # itempool.append(world.create_item("The Dam Key"))
+    # itempool.append(world.create_item("The Destroyer Key"))
+    # itempool.append(world.create_item("Burned Lands Key"))
+    # itempool.append(world.create_item("Floating Islands Key"))
+    # itempool.append(world.create_item("Malefor's Lair Key"))
     keys = [world.create_item("Progressive Chapter Unlock") for _ in range(10)]
     itempool += keys
     
     # NOTE: Some items may only exist if the player enables certain options
-    # if world.options.learn_to_fly:
-    #     itempool.append(world.create_item("Dragons' Flight"))
-    # if world.options.learn_to_climb:
-    #     itempool.append(world.create_item("Wall Climbing"))
-    # if world.options.learn_to_wall_run:
-    #     itempool.append(world.create_item("Wall Running"))
-    # if world.options.learn_to_breathe.current_key == "both_together":
-    #     itempool.append(world.create_item("Dragons' Elements"))
-    # elif world.options.learn_to_breathe.current_key == "both_separate":
-    #     itempool.append(world.create_item("Spyro's Elements"))
-    #     itempool.append(world.create_item("Cynder's Elements"))
-    # elif world.options.learn_to_breathe.current_key == "spyro":
-    #     itempool.append(world.create_item("Spyro's Elements"))
-    # elif world.options.learn_to_breathe.current_key == "cynder":
-    #     itempool.append(world.create_item("Cynder's Elements"))
-    if world.options.learn_fury.current_key == "both_together":
-        itempool.append(world.create_item("Dragon's Fury"))
-    elif world.options.learn_fury.current_key == "both_separate":
-        itempool.append(world.create_item("Spyro's Fury"))
-        itempool.append(world.create_item("Cynder's Fury"))
-    elif world.options.learn_fury.current_key == "spyro":
-        itempool.append(world.create_item("Spyro's Fury"))
-    elif world.options.learn_fury.current_key == "cynder":
-        itempool.append(world.create_item("Cynder's Fury"))
+    """
+    if world.options.learn_to_fly:
+        itempool.append(world.create_item("Dragons' Flight"))
+    if world.options.learn_to_climb:
+        itempool.append(world.create_item("Wall Climbing"))
+    if world.options.learn_to_wall_run:
+        itempool.append(world.create_item("Wall Running"))
+    if world.options.learn_to_breathe.current_key == "both_together":
+        itempool.append(world.create_item("Dragons' Elements"))
+    elif world.options.learn_to_breathe.current_key == "both_separate":
+        itempool.append(world.create_item("Spyro's Elements"))
+        itempool.append(world.create_item("Cynder's Elements"))
+    elif world.options.learn_to_breathe.current_key == "spyro":
+        itempool.append(world.create_item("Spyro's Elements"))
+    elif world.options.learn_to_breathe.current_key == "cynder":
+        itempool.append(world.create_item("Cynder's Elements"))
+    """
+    
     
     # Archipelago requires that each world submits as many locations as it submits items.
     # This is where we can use our filler and trap items.

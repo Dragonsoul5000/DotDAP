@@ -23,7 +23,6 @@ class DisableCheatCodes(DefaultOnToggle):
     """
     display_name = "Disable In-Game Cheat Codes"
 
-
 class LearnToFly(Toggle):
     """
     Neither dragon can fly until it is enabled via the "Dragons' Flight" item.
@@ -32,13 +31,11 @@ class LearnToFly(Toggle):
     """
     display_name = "Learn to Fly"
 
-
 class LearnToClimb(Toggle):
     """
     Neither dragon can climb vines until it is enabled via the "Wall Climbing" item.
     """
     display_name = "Learn to Climb"
-
 
 class LearnToWallRun(Toggle):
     """
@@ -46,12 +43,11 @@ class LearnToWallRun(Toggle):
     """
     display_name = "Learn to Wall Run"
 
-
 class LearnToBreathe(Choice):
     """
     One or both dragons cannot use mana until it is enabled via an item.
     
-    Disabled: Both dragons can replenish their mana (vanilla behavior).
+    Disabled: Both dragons can replenish their mana.
 
     Spyro: Spyro will always have 0 mana until the "Spyro's Elements" item is obtained. Cynder remains unaffected.
 
@@ -67,43 +63,17 @@ class LearnToBreathe(Choice):
     option_spyro = 1
     option_cynder = 2
     option_both_together = 3
-    option_both_separate = 4
+    option_both_seperate = 4
 
     default = option_disabled
-
 
 class ShuffleChapterOrder(Toggle):
     """
     Chapters are unlocked in a random order with the exception of Malefor's Lair which is always unlocked last.
+    You are also guaranteed to start in the Catacombs to allow for the unlock of the Chapter menu as early as possible.
     """
     display_name = "Shuffle Chapter Order"
 
-
-class LearnFury(Choice):
-    """
-    One or both dragons cannot build the fury bar until it is enabled via an item.
-    Use of fury breath via the Fury Armor's Set Bonus remains unaffected.
-    Fury is required to pass phase 3 of the Malefor final boss fight.
-
-    Disabled: Both dragons can build the fury bar (vanilla behavior).
-
-    Spyro: Spyro cannot build fury until the "Spyro's Fury" item is obtained. Cynder remains unaffected.
-
-    Cynder: Cynder cannot build fury until the "Cynder's Fury" item is obtained. Spyro remains unaffected.
-
-    Both Together: Both dragons will not be able to build fury until the "Dragons' Fury" item is obtained.
-
-    Both Separate: Both dragons will not be able to build fury and can re-obtain them separately with the "Spyro's Fury" and "Cynder's Fury" items.
-    """
-    display_name = "Learn Fury"
-
-    option_disabled = 0
-    option_spyro = 1
-    option_cynder = 2
-    option_both_together = 3
-    option_both_separate = 4
-
-    default = option_disabled
 
 
 # We must now define a dataclass inheriting from PerGameCommonOptions that we put all our options in.
@@ -116,7 +86,7 @@ class DotDOptions(DeathLinkMixin, PerGameCommonOptions):
     # learn_to_wall_run: LearnToWallRun
     # learn_to_breathe: LearnToBreathe
     shuffle_chapter_order: ShuffleChapterOrder
-    learn_fury: LearnFury
+    pass
     
 
 # If we want to group our optionps by similar type we can do so as well. This looks nice on the website.
