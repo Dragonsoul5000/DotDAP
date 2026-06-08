@@ -403,9 +403,9 @@ class DotDContext(CommonContext):
             self.handle_receive_health_gem_s()   # instant, one-shot
         elif item_name == "Mana Gem S":
             self.handle_receive_mana_gem_s()
-        elif "Health Gem" in item_name:
+        elif "Red Life Crystal" in item_name:
             self._total_health_gems += 1
-        elif "Mana Gem" in item_name:
+        elif "Green Magic Crystal" in item_name:
             self._total_mana_gems += 1
         elif any(k in item_name for k in ("Tail", "Bracers", "Helmet")):
             self._received_armor.add(item_name)
