@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 # Even if an item doesn't exist on specific options, it must be present in this lookup.
 ITEM_NAME_TO_ID = {
     "Blue Gem Cluster": 1,
-    "Health Gem": 2,
-    "Mana Gem": 3,
+    "Red Life Crystal": 2,
+    "Green Magic Crystal": 3,
     "Elite Enemy": 4,
     "Spyro Helmet Silver": 5,
     "Spyro Helmet Gold": 6,
@@ -52,8 +52,8 @@ ITEM_NAME_TO_ID = {
 # In our case, we will make a dictionary from item name to classification.
 DEFAULT_ITEM_CLASSIFICATIONS = {
     "Blue Gem Cluster": ItemClassification.useful,
-    "Health Gem": ItemClassification.useful,
-    "Mana Gem": ItemClassification.useful,
+    "Red Life Crystal": ItemClassification.useful,
+    "Green Magic Crystal": ItemClassification.useful,
     # "Elite Enemy": ItemClassification.useful,
     "Spyro Helmet Silver": ItemClassification.useful,
     "Spyro Helmet Gold": ItemClassification.useful,
@@ -117,8 +117,8 @@ def create_all_items(world: DotDWorld) -> None:
 
     # Get all non-unique items
     blue_gems = [world.create_item("Blue Gem Cluster") for _ in range(99)]
-    health_gems = [world.create_item("Health Gem") for _ in range(20)]
-    mana_gems = [world.create_item("Mana Gem") for _ in range(20)]
+    health_gems = [world.create_item("Red Life Crystal") for _ in range(20)]
+    mana_gems = [world.create_item("Green Magic Crystal") for _ in range(20)]
     # elite_enemies = [world.create_item("Elite Enemy") for _ in range(8)]
 
     # NOTE: The thing about elite enemies is that they drop nothing but a metric ton of

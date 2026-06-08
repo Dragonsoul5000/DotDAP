@@ -159,6 +159,9 @@ LEVEL_NAME_TO_SCRATCH_ADDRESS = {
     name: addr + 0x11 for name, addr in LEVEL_NAME_TO_ADDRESS.items()
 }
 
+# Starting flag of the AP Catacombs chapter unlock (in vanilla this is an unused unlock)
+ADDR_NEW_GAME_CATACOMBS_UNLOCK = 0x00A3CE4C
+
 # Expected game ID for NTSC-U version of Dawn of the Dragon
 # PINE's get_game_id() typically returns the disc serial, e.g. "SLUS-21820"
 EXPECTED_GAME_ID = "SLUS-21820"
@@ -340,6 +343,9 @@ class DotDContext(CommonContext):
             
             # Always have the first chapter unlocked
             self.memory.write_bytes(LEVEL_NAME_TO_SCRATCH_ADDRESS[self.chapter_order[0]], b"\x01")
+            # If the first chapter is Catacombs, we need to set the starting flag so the player doesn't lose the chapter when selecting New Game
+            if self.chapter_order[0] == "Catacombs":
+                self.memory.write_bytes(ADDR_NEW_GAME_CATACOMBS_UNLOCK, b"\x01")
             
             # Handle Learn Fury (current_key is useless. slot_data I believe stores ints instead. Which int means which option is found in options.py)
             self.learn_fury = args["slot_data"].get("learn_fury", 0)
@@ -403,9 +409,9 @@ class DotDContext(CommonContext):
             self.handle_receive_health_gem_s()   # instant, one-shot
         elif item_name == "Mana Gem S":
             self.handle_receive_mana_gem_s()
-        elif "Health Gem" in item_name:
+        elif "Red Life Crystal" in item_name:
             self._total_health_gems += 1
-        elif "Mana Gem" in item_name:
+        elif "Green Magic Crystal" in item_name:
             self._total_mana_gems += 1
         elif any(k in item_name for k in ("Tail", "Bracers", "Helmet")):
             self._received_armor.add(item_name)
