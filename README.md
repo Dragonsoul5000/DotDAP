@@ -7,8 +7,8 @@ An Archipelago integration for *The Legend of Spyro: Dawn of the Dragon* (PS2, N
 ## Item Pool & Locations
 ### Items
 * **Blue Gem Cluster**: +1000 EXP to both Spyro and Cynder (99, Useful)
-* **Health Gem**: +1 Red Health Crystal to both Spyro and Cynder (20, Useful)
-* **Mana Gem**: +1 Green Magic Crystal to both Spyro and Cynder (20, Useful)
+* **Red Health Crystal**: +1 Red Health Crystal to both Spyro and Cynder, increasing max HP with enough collected (20, Useful)
+* **Green Magic Crystal**: +1 Green Magic Crystal to both Spyro and Cynder, increasing max Mana with enough collected (20, Useful)
 * **[Spyro | Cynder] [Helmet | Bracers | Tail] [Silver | Gold | Fury]**: Grants the specified piece of armor (18, Useful)
 * **Health Gem S**: Any player-controlled dragon(s) recover 19 HP (Filler)
 * **Mana Gem S**: Any player-controlled dragon(s) recover 19 Mana (Filler)
@@ -20,6 +20,9 @@ An Archipelago integration for *The Legend of Spyro: Dawn of the Dragon* (PS2, N
 * **All 18 Armor Chests**
 * **All 8 Elite Enemies**
 * **All 10 Chapter Clears (excluding Malefor's Lair)**
+* **Gallery Unlocks**
+  * Scenery Gallery Unlock
+  * Alliance Gallery Unlock
 
 ### Goal Check
 Defeat Malefor!
